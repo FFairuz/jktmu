@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  name      String?
+  avatar    String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  articles    Article[]
+  comments    Comment[]
+  bookmarks   Bookmark[]
+  preferences UserPreference?
+  analytics   UserAnalytics[]
+
+  @@map("users")
+}
+
+model Article {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  content     String
+  excerpt     String?
+  imageUrl    String?
+  category    Category
+  priority    Priority    @default(MEDIUM)
+  status      Status      @default(DRAFT)
+  views       Int         @default(0)
+  likes       Int         @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  author    User       @relation(fields: [authorId], references: [id])
+  authorId  String
+  comments  Comment[]
+  bookmarks Bookmark[]
+  tags      Tag[]
+
+  @@map("articles")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  String
+  article   Article @relation(fields: [articleId], references: [id])
+  articleId String
+
+  @@map("comments")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String
+  article   Article @relation(fields: [articleId], references: [id])
+  articleId String
+
+  @@unique([userId, articleId])
+  @@map("bookmarks")
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  articles Article[]
+
+  @@map("tags")
+}
+
+model UserPreference {
+  id         String   @id @default(cuid())
+  categories String   // JSON string of preferred categories
+  priorities String   // JSON string of preferred priorities
+  notifications Boolean @default(true)
+  email      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  @@map("user_preferences")
+}
+
+model UserAnalytics {
+  id        String      @id @default(cuid())
+  event     String
+  category  String?
+  action    String?
+  label     String?
+  value     Int?
+  metadata  String?     // JSON string for additional data
+  timestamp DateTime    @default(now())
+  sessionId String?
+  userAgent String?
+  ip        String?
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@map("user_analytics")
+}
+
+model NewsSource {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  url         String
+  rssUrl      String?
+  apiKey      String?
+  isActive    Boolean  @default(true)
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("news_sources")
+}
+
+// Enums
+enum Role {
+  USER
+  ADMIN
+  EDITOR
+  MODERATOR
+}
+
+enum Category {
+  NASIONAL
+  INTERNASIONAL
+  EKONOMI
+  TEKNOLOGI
+  OLAHRAGA
+  HIBURAN
+  POLITIK
+  KESEHATAN
+  PENDIDIKAN
+  LIFESTYLE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  BREAKING
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  DELETED
+}
