@@ -26,6 +26,7 @@ model User {
   bookmarks   Bookmark[]
   preferences UserPreference?
   analytics   UserAnalytics[]
+  auditLogs   AuditLog[]
 
   @@map("users")
 }
@@ -177,4 +178,45 @@ enum Status {
   PUBLISHED
   ARCHIVED
   DELETED
+}
+
+enum Permission {
+  READ_ARTICLES
+  CREATE_ARTICLES
+  EDIT_ARTICLES
+  DELETE_ARTICLES
+  PUBLISH_ARTICLES
+  MANAGE_USERS
+  MANAGE_COMMENTS
+  MANAGE_CATEGORIES
+  MANAGE_TAGS
+  VIEW_ANALYTICS
+  MANAGE_SETTINGS
+  SUPER_ACCESS
+}
+
+model RolePermission {
+  id         String     @id @default(cuid())
+  role       Role
+  permission Permission
+  createdAt  DateTime   @default(now())
+
+  @@unique([role, permission])
+  @@map("role_permissions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  resource  String
+  resourceId String?
+  details   String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
 }
