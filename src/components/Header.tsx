@@ -1,12 +1,28 @@
 'use client'
 
-import { Search, Menu, X } from 'lucide-react'
+import { Search, Menu, X, Filter } from 'lucide-react'
 import { useState } from 'react'
 import UserMenu from './UserMenu'
+import AdvancedSearch from './AdvancedSearch'
 
 export default function ClientHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      console.log('Searching for:', searchQuery)
+      // Implement search functionality
+    }
+  }
+
+  const handleAdvancedSearchResults = (results: any[]) => {
+    console.log('Advanced search results:', results)
+    // Handle search results
+  }
 
   return (
     <header className="bg-white shadow-md">
@@ -48,16 +64,29 @@ export default function ClientHeader() {
 
           {/* Desktop Search */}
           <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
-            <div className="relative flex-1">
+            <form onSubmit={handleSearch} className="relative flex-1">
               <input
                 type="text"
                 placeholder="Cari berita..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 pr-16 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button
+                type="submit"
+                className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
                 <Search className="w-5 h-5" />
               </button>
-            </div>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedSearch(true)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 p-1"
+                title="Pencarian Lanjutan"
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+            </form>
           </div>
 
           {/* Desktop Actions */}
@@ -85,14 +114,28 @@ export default function ClientHeader() {
         {/* Mobile Search */}
         {isSearchOpen && (
           <div className="md:hidden mt-4">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <input
                 type="text"
                 placeholder="Cari berita..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 pr-16 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            </div>
+              <button
+                type="submit"
+                className="absolute right-8 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedSearch(true)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 p-1"
+              >
+                <Filter className="w-4 h-4" />
+              </button>
+            </form>
           </div>
         )}
 
@@ -105,6 +148,13 @@ export default function ClientHeader() {
           </div>
         )}
       </div>
+
+      {/* Advanced Search Modal */}
+      <AdvancedSearch
+        isOpen={showAdvancedSearch}
+        onClose={() => setShowAdvancedSearch(false)}
+        onSearch={handleAdvancedSearchResults}
+      />
     </header>
   )
 }

@@ -26,7 +26,8 @@ import {
   Image as ImageIcon,
   Layout,
   Bell,
-  HelpCircle
+  HelpCircle,
+  User
 } from 'lucide-react'
 
 // Dynamic imports for CMS components
@@ -670,6 +671,172 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
     { id: 'settings', label: 'Settings', icon: Settings, permission: 'manage_settings' },
   ]
 
+  // Render comments management
+  const renderComments = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">Comments Management</h1>
+        <div className="flex space-x-2">
+          <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="all">Semua Status</option>
+            <option value="pending">Menunggu Moderasi</option>
+            <option value="approved">Disetujui</option>
+            <option value="spam">Spam</option>
+          </select>
+          <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2">
+            <Trash2 className="w-4 h-4" />
+            <span>Hapus Dipilih</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Comments Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg border p-4">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <MessageSquare className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-600">Total Komentar</p>
+              <p className="text-xl font-bold text-gray-900">1,234</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border p-4">
+          <div className="flex items-center">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Calendar className="w-5 h-5 text-orange-600" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-600">Menunggu Moderasi</p>
+              <p className="text-xl font-bold text-gray-900">23</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border p-4">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Eye className="w-5 h-5 text-green-600" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-600">Disetujui</p>
+              <p className="text-xl font-bold text-gray-900">1,187</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg border p-4">
+          <div className="flex items-center">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <Trash2 className="w-5 h-5 text-red-600" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-600">Spam/Ditolak</p>
+              <p className="text-xl font-bold text-gray-900">24</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Comments Table */}
+      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <input type="checkbox" className="rounded border-gray-300" />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Komentar
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Artikel
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Penulis
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tanggal
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {/* Mock comment data */}
+              {[1, 2, 3, 4, 5].map((i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input type="checkbox" className="rounded border-gray-300" />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="max-w-xs">
+                      <p className="text-sm text-gray-900 line-clamp-2">
+                        Artikel yang sangat informatif! Terima kasih telah berbagi informasi ini. Saya setuju dengan pendapat penulis tentang...
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="max-w-xs">
+                      <p className="text-sm text-gray-900 truncate">
+                        Breaking News: Perkembangan Ekonomi Indonesia 2025
+                      </p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-8 w-8">
+                        <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                          <User className="w-4 h-4 text-gray-600" />
+                        </div>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-gray-900">Ahmad Rizki</p>
+                        <p className="text-xs text-gray-500">user@example.com</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      i % 3 === 0 
+                        ? 'bg-orange-100 text-orange-800' 
+                        : i % 3 === 1 
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {i % 3 === 0 ? 'Menunggu' : i % 3 === 1 ? 'Disetujui' : 'Spam'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    19 Okt 2025
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex space-x-2">
+                      <button className="text-blue-600 hover:text-blue-900">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button className="text-green-600 hover:text-green-900">
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button className="text-red-600 hover:text-red-900">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -729,7 +896,7 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
       case 'users':
         return renderUsers()
       case 'comments':
-        return <div className="p-6 text-center text-gray-500">Comments management coming soon...</div>
+        return renderComments()
       case 'analytics':
         return hasPermission('view_analytics') ? 
           <div className="p-6 text-center text-gray-500">Analytics dashboard coming soon...</div> :
