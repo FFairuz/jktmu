@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { 
   Users, 
   FileText, 
@@ -20,8 +21,18 @@ import {
   Filter,
   ChevronDown,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Folder,
+  Image as ImageIcon,
+  Layout,
+  Bell,
+  HelpCircle
 } from 'lucide-react'
+
+// Dynamic imports for CMS components
+const ArticleEditor = dynamic(() => import('./admin/ArticleEditor'), { ssr: false })
+const MediaLibrary = dynamic(() => import('./admin/MediaLibrary'), { ssr: false })
+const CategoryManager = dynamic(() => import('./admin/CategoryManager'), { ssr: false })
 
 // State interfaces
 interface DashboardStats {
@@ -63,6 +74,9 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [articles, setArticles] = useState<Article[]>([])
+  const [showArticleEditor, setShowArticleEditor] = useState(false)
+  const [showMediaLibrary, setShowMediaLibrary] = useState(false)
+  const [editingArticle, setEditingArticle] = useState<any>(null)
 
   // Load dashboard data on mount
   useEffect(() => {
@@ -131,6 +145,68 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
     }
   }
 
+  const handleSaveArticle = async (articleData: any) => {
+    try {
+      const url = editingArticle ? `/api/admin/articles/${editingArticle.id}` : '/api/admin/articles'
+      const method = editingArticle ? 'PUT' : 'POST'
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(articleData)
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        await loadArticles() // Reload articles
+        setShowArticleEditor(false)
+        setEditingArticle(null)
+      }
+    } catch (error) {
+      console.error('Error saving article:', error)
+    }
+  }
+
+  const handleDeleteArticle = async (articleId: string) => {
+    if (!confirm('Are you sure you want to delete this article?')) return
+    
+    try {
+      const response = await fetch(`/api/admin/articles?id=${articleId}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        await loadArticles() // Reload articles
+      }
+    } catch (error) {
+      console.error('Error deleting article:', error)
+    }
+  }
+
+  // Media handling functions
+  const handleMediaSelect = (media: any) => {
+    // If we're in article editor context, pass the media to the editor
+    if (showArticleEditor) {
+      // This would integrate with the article editor
+      console.log('Media selected for article editor:', media)
+    }
+    setShowMediaLibrary(false)
+  }
+
+  const handleOpenMediaLibrary = () => {
+    setShowMediaLibrary(true)
+  }
+
+  // Category management functions
+  const handleCategoryAction = (action: string, categoryData?: any) => {
+    console.log('Category action:', action, categoryData)
+    // This would handle category CRUD operations
+    // Could include API calls to manage categories
+  }
+
   // Permission check function
   const hasPermission = (permission: string) => {
     const rolePermissions = {
@@ -174,6 +250,7 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Users</p>
               <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">Active platform users</p>
             </div>
           </div>
         </div>
@@ -186,6 +263,7 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Articles</p>
               <p className="text-2xl font-bold text-gray-900">{stats?.totalArticles || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">Published content</p>
             </div>
           </div>
         </div>
@@ -198,6 +276,7 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Views</p>
               <p className="text-2xl font-bold text-gray-900">{(stats?.totalViews || 0).toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-1">All-time page views</p>
             </div>
           </div>
         </div>
@@ -205,37 +284,138 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
         <div className="bg-white rounded-lg shadow-sm border p-6">
           <div className="flex items-center">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-orange-600" />
+              <Calendar className="w-6 h-6 text-orange-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Pending Articles</p>
               <p className="text-2xl font-bold text-gray-900">{stats?.pendingArticles || 0}</p>
+              <p className="text-xs text-gray-500 mt-1">Awaiting review</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+      {/* CMS Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-blue-600 rounded-lg">
+              <Layout className="w-6 h-6 text-white" />
+            </div>
+            <ChevronDown className="w-5 h-5 text-blue-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Content Management</h3>
+          <p className="text-blue-700 text-sm mb-4">Create, edit, and manage your articles and content</p>
+          <button
+            onClick={() => setActiveTab('articles')}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Manage Content
+          </button>
         </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">New article &ldquo;Breaking News Hari Ini&rdquo; published</span>
-              <span className="text-xs text-gray-400">2 hours ago</span>
+
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-purple-600 rounded-lg">
+              <ImageIcon className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">User &ldquo;editor@portal.com&rdquo; logged in</span>
-              <span className="text-xs text-gray-400">4 hours ago</span>
+            <ChevronDown className="w-5 h-5 text-purple-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-purple-900 mb-2">Media Library</h3>
+          <p className="text-purple-700 text-sm mb-4">Upload, organize, and manage your media files</p>
+          <button
+            onClick={() => setActiveTab('media')}
+            className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Open Media
+          </button>
+        </div>
+
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-green-600 rounded-lg">
+              <Tags className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">Article &ldquo;Update Ekonomi&rdquo; moved to draft</span>
-              <span className="text-xs text-gray-400">6 hours ago</span>
+            <ChevronDown className="w-5 h-5 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-green-900 mb-2">Categories</h3>
+          <p className="text-green-700 text-sm mb-4">Organize content with hierarchical categories</p>
+          <button
+            onClick={() => setActiveTab('categories')}
+            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Manage Categories
+          </button>
+        </div>
+      </div>
+
+      {/* Recent Activity & Quick Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">New article &ldquo;Breaking News Hari Ini&rdquo; published</span>
+                <span className="text-xs text-gray-400">2 hours ago</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">User &ldquo;editor@portal.com&rdquo; logged in</span>
+                <span className="text-xs text-gray-400">4 hours ago</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">5 new images uploaded to media library</span>
+                <span className="text-xs text-gray-400">6 hours ago</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                <span className="text-sm text-gray-600">Category &ldquo;Technology&rdquo; updated</span>
+                <span className="text-xs text-gray-400">8 hours ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Today&apos;s Statistics</h2>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Today&apos;s Views</span>
+              <span className="text-sm font-semibold text-gray-900">{(stats?.todayViews || 1247).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">New Articles</span>
+              <span className="text-sm font-semibold text-gray-900">3</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Comments</span>
+              <span className="text-sm font-semibold text-gray-900">{stats?.todayComments || 23}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Active Users</span>
+              <span className="text-sm font-semibold text-gray-900">
+                <span className="inline-flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  {Math.floor((stats?.totalUsers || 150) * 0.15)} online
+                </span>
+              </span>
+            </div>
+            <div className="pt-4 border-t border-gray-200">
+              <div className="text-center">
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  View Full Analytics →
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -249,12 +429,29 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Articles Management</h1>
-        {hasPermission('create_articles') && (
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
-            <Plus className="w-4 h-4" />
-            <span>New Article</span>
-          </button>
-        )}
+        <div className="flex items-center space-x-3">
+          {hasPermission('create_articles') && (
+            <>
+              <button 
+                onClick={() => setShowMediaLibrary(true)}
+                className="flex items-center space-x-2 text-gray-600 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span>Media Library</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setEditingArticle(null)
+                  setShowArticleEditor(true)
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Article</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Search and Filter */}
@@ -333,12 +530,21 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
                         <Eye className="w-4 h-4" />
                       </button>
                       {hasPermission('edit_articles') && (
-                        <button className="text-indigo-600 hover:text-indigo-900">
+                        <button 
+                          onClick={() => {
+                            setEditingArticle(article)
+                            setShowArticleEditor(true)
+                          }}
+                          className="text-indigo-600 hover:text-indigo-900"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
                       )}
                       {hasPermission('delete_articles') && (
-                        <button className="text-red-600 hover:text-red-900">
+                        <button 
+                          onClick={() => handleDeleteArticle(article.id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
@@ -456,6 +662,8 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, permission: 'read' },
     { id: 'articles', label: 'Articles', icon: FileText, permission: 'read' },
+    { id: 'categories', label: 'Categories', icon: Tags, permission: 'manage_categories' },
+    { id: 'media', label: 'Media Library', icon: ImageIcon, permission: 'read' },
     { id: 'users', label: 'Users', icon: Users, permission: 'manage_users' },
     { id: 'comments', label: 'Comments', icon: MessageSquare, permission: 'manage_comments' },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp, permission: 'view_analytics' },
@@ -468,6 +676,56 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
         return renderDashboard()
       case 'articles':
         return renderArticles()
+      case 'categories':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Category Management</h2>
+                <p className="text-gray-600">Organize your content with hierarchical categories</p>
+              </div>
+            </div>
+            <CategoryManager />
+          </div>
+        )
+      case 'media':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Media Library</h2>
+                <p className="text-gray-600">Manage your images, videos, and documents</p>
+              </div>
+              <button
+                onClick={handleOpenMediaLibrary}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Open Media Library
+              </button>
+            </div>
+            
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Media Management</h3>
+              <p className="text-gray-600 mb-4">Upload, organize, and manage your media files</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-md mx-auto">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <Folder className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium">Organize</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <Search className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium">Search</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <Plus className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium">Upload</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
       case 'users':
         return renderUsers()
       case 'comments':
@@ -530,6 +788,34 @@ export default function AdminPanel({ userRole = 'ADMIN' }: AdminPanelProps) {
           </div>
         </div>
       </div>
+
+      {/* Article Editor Modal */}
+      {showArticleEditor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <ArticleEditor
+              article={editingArticle}
+              onSave={handleSaveArticle}
+              onCancel={() => {
+                setShowArticleEditor(false)
+                setEditingArticle(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Media Library Modal */}
+      {showMediaLibrary && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden">
+            <MediaLibrary
+              onClose={() => setShowMediaLibrary(false)}
+              onSelect={handleMediaSelect}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
